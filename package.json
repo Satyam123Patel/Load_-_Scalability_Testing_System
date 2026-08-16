@@ -1,0 +1,17 @@
+{
+  "name": "50-user-load-scalability-testing-system",
+  "version": "1.0.0",
+  "description": "A comprehensive 50-User Simulated Load & Scalability Testing Platform engineered with Antigravity AI Chatbot assistance.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "author": "Satyam Patel (Powered by Antigravity AI)",
+  "license": "MIT"
+}
