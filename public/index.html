@@ -50,12 +50,13 @@
       <option value="1025" selected>1,025 Virtual Users (Proven Capacity)</option>
     </select>
     <button class="btn" onclick="startTest()">Run Load Test</button>
+    <button class="btn" style="background: linear-gradient(135deg, #dc2626, #b91c1c);" onclick="stopTest()">Stop Load Test</button>
   </div>
 
   <div class="grid">
     <div class="card">
       <h3>Active Virtual Users</h3>
-      <div class="value" id="activeUsers">0</div>
+      <div class="value"><span id="activeUsers">0</span> / <span id="targetMaxUsers">1,025</span></div>
       <div class="sub" id="userCap">Target Capacity: 1,025</div>
     </div>
     <div class="card">
@@ -122,13 +123,17 @@
       const userCount = document.getElementById('userSelect').value;
       const targetUrl = document.getElementById('targetUrl').value;
       
-      document.getElementById('userCap').innerText = 'Target Capacity: ' + userCount;
+      document.getElementById('targetMaxUsers').innerText = Number(userCount).toLocaleString();
+      document.getElementById('userCap').innerText = 'Target Capacity: ' + Number(userCount).toLocaleString();
 
       fetch('/api/users/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userCount, targetUrl })
       });
+    }
+    function stopTest() {
+      fetch('/api/simulation/stop', { method: 'POST' });
     }
   </script>
 </body>

@@ -68,17 +68,20 @@ app.post('/api/simulation/request', (req, res) => {
   }, latency);
 });
 
-// Register Virtual Users in Batch
+// Stop Load Test Simulation
+let activeInterval = null;
+
 app.post('/api/users/connect', (req, res) => {
   const targetCount = parseInt(req.body.userCount || '50', 10);
   const targetUrl = req.body.targetUrl || 'Internal Simulation Engine';
+
+  if (activeInterval) clearInterval(activeInterval);
 
   activeSessions.clear();
   requestLogs = [];
   totalRequestsHandled = 0;
   totalErrors = 0;
 
-  // Batch spawn selected virtual users concurrently
   for (let i = 1; i <= targetCount; i++) {
     const userId = `vuser_${String(i).padStart(4, '0')}`;
     activeSessions.set(userId, { connectedAt: new Date(), lastActive: new Date(), targetUrl });
@@ -86,10 +89,10 @@ app.post('/api/users/connect', (req, res) => {
 
   updateServerResourceMetrics();
 
-  // Simulate ongoing concurrent traffic workload
-  const interval = setInterval(() => {
+  activeInterval = setInterval(() => {
     if (activeSessions.size === 0) {
-      clearInterval(interval);
+      clearInterval(activeInterval);
+      activeInterval = null;
       return;
     }
 
@@ -113,6 +116,17 @@ app.post('/api/users/connect', (req, res) => {
 
   io.emit('metrics_update', getLiveMetrics());
   res.json({ success: true, count: activeSessions.size, message: `Spawned ${activeSessions.size} Virtual Users` });
+});
+
+app.post('/api/simulation/stop', (req, res) => {
+  if (activeInterval) {
+    clearInterval(activeInterval);
+    activeInterval = null;
+  }
+  activeSessions.clear();
+  updateServerResourceMetrics();
+  io.emit('metrics_update', getLiveMetrics());
+  res.json({ success: true, message: 'Load test simulation stopped' });
 });
 
 function updateServerResourceMetrics() {
