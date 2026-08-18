@@ -119,10 +119,15 @@
     });
 
     function startTest() {
+      const userCount = document.getElementById('userSelect').value;
+      const targetUrl = document.getElementById('targetUrl').value;
+      
+      document.getElementById('userCap').innerText = 'Target Capacity: ' + userCount;
+
       fetch('/api/users/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'vuser_' + Math.floor(Math.random()*1000) })
+        body: JSON.stringify({ userCount, targetUrl })
       });
     }
   </script>

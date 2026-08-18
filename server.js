@@ -68,32 +68,51 @@ app.post('/api/simulation/request', (req, res) => {
   }, latency);
 });
 
-// Register Virtual Users
+// Register Virtual Users in Batch
 app.post('/api/users/connect', (req, res) => {
-  const userId = req.body.userId || `user_${Math.random().toString(36).substr(2, 6)}`;
-  activeSessions.set(userId, { connectedAt: new Date(), lastActive: new Date() });
-  updateServerResourceMetrics();
-  io.emit('metrics_update', getLiveMetrics());
-  res.json({ success: true, userId, totalActive: activeSessions.size });
-});
+  const targetCount = parseInt(req.body.userCount || '50', 10);
+  const targetUrl = req.body.targetUrl || 'Internal Simulation Engine';
 
-app.post('/api/users/disconnect', (req, res) => {
-  const { userId } = req.body;
-  if (userId) activeSessions.delete(userId);
-  updateServerResourceMetrics();
-  io.emit('metrics_update', getLiveMetrics());
-  res.json({ success: true, totalActive: activeSessions.size });
-});
-
-// Reset metrics endpoint
-app.post('/api/simulation/reset', (req, res) => {
   activeSessions.clear();
   requestLogs = [];
   totalRequestsHandled = 0;
   totalErrors = 0;
+
+  // Batch spawn selected virtual users concurrently
+  for (let i = 1; i <= targetCount; i++) {
+    const userId = `vuser_${String(i).padStart(4, '0')}`;
+    activeSessions.set(userId, { connectedAt: new Date(), lastActive: new Date(), targetUrl });
+  }
+
   updateServerResourceMetrics();
+
+  // Simulate ongoing concurrent traffic workload
+  const interval = setInterval(() => {
+    if (activeSessions.size === 0) {
+      clearInterval(interval);
+      return;
+    }
+
+    activeSessions.forEach((session, uId) => {
+      totalRequestsHandled++;
+      const latency = Math.round(35 + Math.random() * 45 + (activeSessions.size / 1025) * 60);
+      const isErr = activeSessions.size > 1200 && Math.random() < 0.05;
+
+      if (isErr) {
+        totalErrors++;
+        requestLogs.unshift({ id: Date.now() + Math.random(), userId: uId, statusCode: 503, latency, timestamp: new Date().toISOString() });
+      } else {
+        requestLogs.unshift({ id: Date.now() + Math.random(), userId: uId, statusCode: 200, latency, timestamp: new Date().toISOString() });
+      }
+
+      if (requestLogs.length > 50) requestLogs.pop();
+    });
+
+    io.emit('metrics_update', getLiveMetrics());
+  }, 1000);
+
   io.emit('metrics_update', getLiveMetrics());
-  res.json({ success: true, message: 'Simulation metrics reset' });
+  res.json({ success: true, count: activeSessions.size, message: `Spawned ${activeSessions.size} Virtual Users` });
 });
 
 function updateServerResourceMetrics() {
