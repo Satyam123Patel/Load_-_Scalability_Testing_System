@@ -1,0 +1,31 @@
+1. Online (Deployed) Application Load Testing
+When your app is deployed online (e.g., https://your-pet-adoption-app.onrender.com or https://your-app.vercel.app):
+
+What happens: The 50 Virtual User Bots send real HTTP requests over the internet to your cloud server.
+What you measure:
+Real internet network latency
+Server CPU & RAM load on your hosting provider (Render, AWS, Vercel, etc.)
+Real database connections & query limits (MongoDB / MySQL connection pool limits)
+Command to test online app:
+bash
+
+
+node load_tester.js --target=https://your-pet-adoption-app.onrender.com --scenario=FULL_USER_JOURNEY --users=50
+2. Offline (Local Laptop) Application Load Testing
+When your app is running locally on your laptop (e.g., http://localhost:5000):
+
+Why test offline first: Professional developers always test offline first before launching online to find bugs, memory leaks, and database bottlenecks on their own machine.
+What happens: Your 50 Virtual User Bots hit http://localhost:5000.
+What you measure:
+How many concurrent requests your Node.js/Java/Python backend code can process per second (RPS) before slowing down.
+How many simultaneous database connections your local MySQL/MongoDB instance can handle.
+Command to test local offline app:
+bash
+
+
+node load_tester.js --target=http://localhost:5000 --scenario=FULL_USER_JOURNEY --users=50
+Summary Comparison:
+Feature	Local (Offline) Testing	Deployed (Online) Testing
+Target URL	http://localhost:5000	https://your-live-domain.com
+Purpose	Catch code bugs, CPU spikes & DB connection limits early	Test real cloud server limits & internet network lag
+Is it real load?	YES, 50 real concurrent async threads hit your backend code	YES, 50 real virtual bots hit your live cloud server

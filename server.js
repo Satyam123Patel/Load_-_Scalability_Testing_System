@@ -11,6 +11,7 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // In-memory metrics & user session tracking
 let activeSessions = new Map();
