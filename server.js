@@ -75,6 +75,12 @@ app.post('/api/users/connect', (req, res) => {
   const targetCount = parseInt(req.body.userCount || '50', 10);
   const targetUrl = req.body.targetUrl || 'Internal Simulation Engine';
 
+  // Ensure load test only targets valid existing web URLs
+  const isValidUrl = /^https?:\/\/.+/i.test(targetUrl) && !targetUrl.includes('example.com');
+  if (!isValidUrl && targetUrl !== 'Internal Simulation Engine') {
+    return res.status(400).json({ error: 'Invalid URL. Please enter a real existing website URL (e.g., https://your-site.com)' });
+  }
+
   if (activeInterval) clearInterval(activeInterval);
 
   activeSessions.clear();
