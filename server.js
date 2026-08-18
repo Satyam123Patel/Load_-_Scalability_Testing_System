@@ -158,7 +158,7 @@ function getLiveMetrics() {
     avgLatencyMs: avgLatency,
     throughputRps: +(count * 1.8 + Math.random() * 0.5).toFixed(1),
     serverConfig,
-    recentLogs: requestLogs.slice(0, 15)
+    recentLogs: requestLogs.slice(0, 1025)
   };
 }
 

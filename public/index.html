@@ -25,9 +25,10 @@
     .btn { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-    .logs-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
-    .logs-table th, .logs-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
-    .logs-table th { background: #0f172a; color: #94a3b8; font-size: 0.85rem; }
+    .table-container { max-height: 480px; overflow-y: auto; border-radius: 12px; border: 1px solid #334155; }
+    .logs-table { width: 100%; border-collapse: collapse; background: #1e293b; }
+    .logs-table th, .logs-table td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid #334155; }
+    .logs-table th { background: #0f172a; color: #94a3b8; font-size: 0.85rem; position: sticky; top: 0; z-index: 10; }
     .status-200 { color: #34d399; font-weight: 600; }
     .status-503 { color: #f87171; font-weight: 600; }
   </style>
@@ -77,22 +78,25 @@
   </div>
 
   <h2 style="margin-bottom: 1rem; font-size: 1.2rem; color: #94a3b8;">Live Telemetry Request Logs</h2>
-  <table class="logs-table">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Virtual User</th>
-        <th>Endpoint / Action</th>
-        <th>Response Latency</th>
-        <th>Status Code</th>
-      </tr>
-    </thead>
-    <tbody id="logBody">
-      <tr>
-        <td colspan="5" style="text-align: center; color: #64748b;">Click "Run Load Test" to launch live telemetry...</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>Virtual User</th>
+          <th>Endpoint / Action</th>
+          <th>Response Latency</th>
+          <th>Status Code</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <tr>
+          <td colspan="6" style="text-align: center; color: #64748b;">Click "Run Load Test" to launch live telemetry...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <script>
     const socket = io();
@@ -107,8 +111,9 @@
 
       if (data.recentLogs && data.recentLogs.length > 0) {
         const tbody = document.getElementById('logBody');
-        tbody.innerHTML = data.recentLogs.map(l => `
+        tbody.innerHTML = data.recentLogs.map((l, index) => `
           <tr>
+            <td style="color: #64748b; font-weight: 600;">${index + 1}</td>
             <td>${new Date(l.timestamp).toLocaleTimeString()}</td>
             <td>${l.userId}</td>
             <td>/api/auth/verify-session</td>
@@ -119,18 +124,27 @@
       }
     });
 
-    function startTest() {
+    async function startTest() {
       const userCount = document.getElementById('userSelect').value;
       const targetUrl = document.getElementById('targetUrl').value;
       
       document.getElementById('targetMaxUsers').innerText = Number(userCount).toLocaleString();
       document.getElementById('userCap').innerText = 'Target Capacity: ' + Number(userCount).toLocaleString();
 
-      fetch('/api/users/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userCount, targetUrl })
-      });
+      try {
+        const res = await fetch('/api/users/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userCount, targetUrl })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert('⚠️ Invalid URL! Please input a valid existing website URL (e.g. https://your-site.com)');
+        }
+      } catch (e) {
+        alert('⚠️ Please input a valid existing website URL!');
+      }
     }
     function stopTest() {
       fetch('/api/simulation/stop', { method: 'POST' });
